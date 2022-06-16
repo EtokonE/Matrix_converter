@@ -70,8 +70,8 @@ class MatrixTransformer:
     def _extract_participant_info(filename) -> Participant:
         sub_info = Path(filename).stem
         return Participant(file_name=sub_info,
-                           age_group=sub_info.split('_')[-1],
-                           gender=sub_info.split('_')[-2])
+                           age_group=sub_info.split('_')[-2],
+                           gender=sub_info.split('_')[-1])
 
 
     def _matrix2transformed_dict(self, matrix, filename):
@@ -87,13 +87,14 @@ class MatrixTransformer:
         for row in range(matrix.shape[0]):
             for col in range(matrix.shape[1]):
                 transformed_dict[matrix.index[row] +
-                                 '&' +
-                                 matrix.columns[col]] = matrix.iloc[row][col]
+                                 '_&_' +
+                                 matrix.columns[col] +
+                                 f'_row:{row}_col:{col}'] = matrix.iloc[row][col]
         return transformed_dict
 
-    def transform_matrix(self, matrix_file):
+    def transform_matrix(self, matrix_file, mat_shape):
         """Выполняет все преобразования"""
-        matrix = self._mat2df(matrix_file)
+        matrix = self._mat2df(matrix_file, mat_shape)
         transformed_dict = self._matrix2transformed_dict(matrix, filename=matrix_file)
         transformed_df = self._dict2df(transformed_dict)
         self.write_excel(transformed_df, matrix_file)
@@ -110,7 +111,7 @@ def main():
     # Transform all .mat files
     for _file in os.listdir(cfg.PATH.MAT_FOLDER):
         if _file.endswith('.mat'):
-            transformer.transform_matrix(matrix_file=_file)
+            transformer.transform_matrix(matrix_file=_file, mat_shape=cfg.PARAMETERS.MAT_SIZE)
     # Write final file with combined matrices
     transformer.write_excel(df=transformer.full_df,
                             out_filename=os.path.join(cfg.PATH.OUT_FOLDER,
@@ -126,10 +127,10 @@ def test():
     # Create transformer
     transformer = MatrixTransformer(mat_folder=cfg.PATH.MAT_FOLDER,
                                     out_folder=cfg.TEST_MODE.OUT)
-    mat = transformer._mat2df(cfg.TEST_MODE.MAT)
-    print(mat)
-
-    print(transformer._clear_roi_name('BBL_hfgbdb_pre_last'))
+    mat = transformer._mat2df(cfg.TEST_MODE.MAT, cfg.PARAMETERS.MAT_SIZE)
+    print(mat.shape)
+    dict = transformer._matrix2transformed_dict(mat, cfg.TEST_MODE.MAT)
+    print(dict.shape)
 
 if __name__ == '__main__':
     #test()
